@@ -72,7 +72,7 @@ class Softmax:
         return softmax_output
     
 class Lossfunction:
-    def __init___(self):
+    def __init__s(self):
         pass
 
     def call(prediction, target):
