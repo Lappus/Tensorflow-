@@ -194,3 +194,61 @@ plt.show()
     # so with a higher momentum and a lower learning rate, the model actually had better accuracy through the iterations
     # so maybe because the lower learning rate is slowing down the process of updating of weights and biases but the momentum helps preventing local optima the combination can be quite strong
     # because there is no overshooting?
+
+
+#3d error plot
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+data, _ = tf.keras.datasets.mnist.load_data() # list of input, target pairs from dataset
+sample_size = 100
+
+
+
+#choose two random weights from a layer
+layer_idx = 2
+random_weight_idx_1 = [45,7]
+random_weight_idx_2 = [45,87]
+w1_org_val = model.trainable_variables[layer_idx].numpy()[random_weight_idx_1[0], random_weight_idx_1[1]]
+w2_org_val = model.trainable_variables[layer_idx].numpy()[random_weight_idx_2[0], random_weight_idx_2[1]]
+
+#get a sample from the data
+input = data[0][0:sample_size]
+target = data[1][0:sample_size]
+input = np.reshape(input, (sample_size,-1))
+target = np.reshape(target, (sample_size))
+target = tf.one_hot(target, depth=10)
+
+#aoi is area of interest
+aoi = [i/100 for i in range(-500,500,20)]
+org_val = model.trainable_variables[layer_idx].numpy()
+
+i_agg = [] #index in first weight matrix dimension
+j_agg = [] #index in second weight matrix dimension
+loss_agg = []
+for w1_change in aoi:
+  for w2_change in aoi:
+    #changes applied to weight matrix
+    delta = np.zeros(model.trainable_variables[layer_idx].shape)
+    delta[random_weight_idx_1[0],random_weight_idx_1[1]] = w1_change + w1_org_val
+    delta[random_weight_idx_2[0],random_weight_idx_2[1]] = w2_change + w2_org_val
+    model.trainable_variables[layer_idx].assign_add(delta)
+
+    #see what model does with changed weights
+    pred = model(input)
+    loss = cross_entropy_loss(target, pred)
+
+    #log the results
+    model.trainable_variables[layer_idx].assign(org_val)
+    i_agg.append(w1_change + w1_org_val)
+    j_agg.append(w2_change + w2_org_val)
+    loss_agg.append(loss)
+
+
+fig = plt.figure(figsize=(25,25))
+ax = fig.gca(projection='3d')
+
+ax.plot_trisurf(i_agg, j_agg, loss_agg, linewidth=0.001)
+
+plt.show()
